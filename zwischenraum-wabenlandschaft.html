@@ -34,18 +34,27 @@ canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
 <div id="info">Zwischenraum</div>
 <div id="count"></div>
 <div id="tip">
-  <div class="td" style="color:#e05080">Kognition</div>
+  <div class="td" style="color:#c94b8c">Kognition</div>
   <div class="tv" id="tip-k"></div>
-  <div class="td" style="color:#22a8a8">Körper</div>
+  <div class="td" style="color:#2eb8b8">Körper</div>
   <div class="tv" id="tip-b"></div>
-  <div class="td" style="color:#7788ee">Umwelt</div>
+  <div class="td" style="color:#4455cc">Umwelt</div>
   <div class="tv" id="tip-u"></div>
   <div class="to" id="tip-o"></div>
 </div>
 
 <script>
-const URL='https://script.google.com/macros/s/AKfycbx4SSLB-1n8lrcpd2BxOaIcwN1ytlRbUpjkPyOflwzK4QlrEd0Vf-p_qkvP04z2pHmUSw/exec';
-const CK='rgba(201,75,140,',CB='rgba(46,184,184,',CU='rgba(68,85,204,',CM='rgba(123,111,160,';
+const SURL='https://script.google.com/macros/s/AKfycbx4SSLB-1n8lrcpd2BxOaIcwN1ytlRbUpjkPyOflwzK4QlrEd0Vf-p_qkvP04z2pHmUSw/exec';
+
+// Colors matching app gradient screens exactly
+const COL={
+  k:'rgba(201,75,140,',   // Kognition — rosa/pink
+  b:'rgba(46,184,184,',   // Körper — türkis
+  u:'rgba(68,85,204,',    // Umwelt — blau-violett
+  m:'rgba(123,111,160,',  // Möglichkeitsraum — violett
+};
+
+// Axial hex grid coordinates
 const AXIAL=[[0,0],[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1],[2,0],[1,1],[0,2],[-1,2],[-2,2],[-2,1],[-2,0],[-1,-1],[0,-2],[1,-2],[2,-2],[2,-1],[2,1],[1,2],[-1,3],[-2,3],[3,0],[0,3],[-3,2],[3,-1],[2,-2],[0,-3],[-1,-2]];
 
 const cv=document.getElementById('c');
@@ -60,81 +69,118 @@ function resize(){
 }
 
 function layout(){
-  const R=Math.min(W,H)*0.09,S=Math.sqrt(3),cx=W/2,cy=H/2;
+  const R=Math.min(W,H)*0.09;
+  const S=Math.sqrt(3);
+  const cx=W/2,cy=H/2;
   hexes=entries.map((e,i)=>{
     const[q,r]=AXIAL[i%AXIAL.length];
-    return{x:cx+R*S*(q+r/2),y:cy+R*1.5*r,r:R,e,born:hexes[i]?hexes[i].born:Date.now()-i*150};
+    return{
+      x:cx+R*S*(q+r/2),
+      y:cy+R*1.5*r,
+      r:R,e,
+      born:hexes[i]?hexes[i].born:Date.now()-i*150
+    };
   });
 }
 
-function hp(cx,cy,r){
-  return Array.from({length:6},(_,i)=>{const a=Math.PI/180*(60*i-30);return[cx+r*Math.cos(a),cy+r*Math.sin(a)]});
+// Gem vertices — point-top orientation (like app icon)
+// v[0]=top, v[1]=top-right, v[2]=bottom-right, v[3]=bottom, v[4]=bottom-left, v[5]=top-left
+function gemVerts(cx,cy,r){
+  return Array.from({length:6},(_,i)=>{
+    const a=Math.PI/180*(60*i-90); // -90 = start from top
+    return[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+  });
 }
 
-function drawHex(h,hl){
+function drawGemHex(h,hl){
   const{x,y,r,e,born}=h;
   const sc=Math.min(1,(Date.now()-born)/500);
   if(sc<=0)return;
-  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);
-  // v[0]=top-right v[1]=right v[2]=bottom-right v[3]=bottom-left v[4]=left v[5]=top-left
-  const v=hp(0,0,r),C=[0,0],al=hl?1:0.88;
 
-  function tri(pts,c,a){
-    ctx.beginPath();pts.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-    ctx.closePath();ctx.fillStyle=c+a+')';ctx.fill();
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(sc,sc);
+
+  // v[0]=top  v[1]=top-right  v[2]=bottom-right
+  // v[3]=bottom  v[4]=bottom-left  v[5]=top-left
+  const v=gemVerts(0,0,r);
+  const C=[0,0];
+  const al=hl?1:0.88;
+
+  function face(pts,col,alpha){
+    ctx.beginPath();
+    pts.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+    ctx.closePath();
+    ctx.fillStyle=col+alpha+')';
+    ctx.fill();
   }
 
-  // 3 outer triangles — same as app
-  tri([C,v[5],v[0],v[1]],CK,al*0.85); // Kognition top
-  tri([C,v[1],v[2],v[3]],CB,al*0.85); // Koerper right
-  tri([C,v[3],v[4],v[5]],CU,al*0.85); // Umwelt left
+  // 4 faces matching app design:
+  // Kognition (top quad): top-left + top + top-right + center
+  face([v[5],v[0],v[1],C],COL.k,al*0.88);
 
-  // 4th triangle — Moeglichkeitsraum (inner, pointing down from center)
-  // Use inner triangle: center + midpoints of bottom edges
-  const im=r*0.42; // inner triangle radius
-  const iv=hp(0,0,im);
-  // Inner triangle pointing down: top-left, top-right, bottom
-  tri([iv[5],iv[0],C],CM,al*0.92);
+  // Körper (right triangle): top-right + bottom-right + center
+  face([v[1],v[2],C],COL.b,al*0.88);
 
-  // Subtle kaleidoscope pattern
-  for(let ring=1;ring<=2;ring++){
-    const rr=r*(ring/5),n=ring*6,cols=[CK,CB,CU,CM];
-    for(let i=0;i<n;i++){
-      const a=(Math.PI*2/n)*i+fr*0.002;
-      ctx.beginPath();
-      ctx.moveTo(rr*.3*Math.cos(a),rr*.3*Math.sin(a));
-      ctx.lineTo(rr*Math.cos(a),rr*Math.sin(a));
-      ctx.lineTo(rr*.8*Math.cos(a+Math.PI*2/n),rr*.8*Math.sin(a+Math.PI*2/n));
-      ctx.closePath();ctx.fillStyle=cols[(ring+i)%4]+(al*.05)+')';ctx.fill();
-    }
-  }
+  // Umwelt (left triangle): bottom-left + top-left + center
+  face([v[4],v[5],C],COL.u,al*0.88);
+
+  // Möglichkeitsraum (bottom quad): center + bottom-right + bottom + bottom-left
+  face([C,v[2],v[3],v[4]],COL.m,al*0.88);
+
+  // Subtle edge shading for depth
+  face([v[5],v[0],v[1],C],COL.k,al*0.06);
 
   // Hex outline
-  ctx.beginPath();v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-  ctx.closePath();ctx.strokeStyle='rgba(255,255,255,'+(al*.2)+')';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.beginPath();
+  v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+  ctx.closePath();
+  ctx.strokeStyle='rgba(255,255,255,'+(al*0.22)+')';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
 
-  // Text over FULL hex, clipped to outer hex
+  // Inner dividing lines (subtle)
+  [[C,v[0]],[C,v[1]],[C,v[2]],[C,v[3]],[C,v[4]],[C,v[5]]].forEach(([a,b])=>{
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);
+    ctx.strokeStyle='rgba(255,255,255,'+(al*0.08)+')';ctx.lineWidth=0.8;ctx.stroke();
+  });
+
+  // Text — Möglichkeitsraum — over full hex, clipped to hex
   if(e.moeglichkeitsraum){
-    const fs=Math.max(8,r*.11);
-    const maxW=r*1.55;
-    const words=e.moeglichkeitsraum.trim().split(/\s+/);
     ctx.save();
-    ctx.beginPath();v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+    // Clip to hex outline
+    ctx.beginPath();
+    v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
     ctx.closePath();ctx.clip();
+
+    const fs=Math.max(8,r*0.12);
+    const maxW=r*1.6;
+    const words=e.moeglichkeitsraum.trim().split(/\s+/);
+
     ctx.font=`italic ${fs}px Georgia,serif`;
-    ctx.fillStyle='rgba(255,255,255,'+(al*.95)+')';
-    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(255,255,255,'+(al*0.95)+')';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+
+    // Build wrapped lines
     const lines=[];let line='';
-    words.forEach(w=>{
-      if(lines.length>=4)return;
+    for(const w of words){
+      if(lines.length>=4)break;
       const test=line+(line?' ':'')+w;
-      if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}
-      else line=test;
-    });
+      if(ctx.measureText(test).width>maxW&&line){
+        lines.push(line);line=w;
+      } else {
+        line=test;
+      }
+    }
     if(lines.length<4&&line)lines.push(line);
-    const lh=fs*1.4;
+
+    const lh=fs*1.45;
     const totalH=(lines.length-1)*lh;
-    lines.forEach((l,i)=>ctx.fillText(l,0,-totalH/2+i*lh));
+    lines.forEach((l,i)=>{
+      ctx.fillText(l,0,-totalH/2+i*lh);
+    });
+
     ctx.restore();
   }
 
@@ -145,76 +191,75 @@ function drawLines(){
   if(hexes.length<2)return;
   hexes.slice(1,Math.min(7,hexes.length)).forEach(h=>{
     ctx.beginPath();ctx.moveTo(hexes[0].x,hexes[0].y);ctx.lineTo(h.x,h.y);
-    ctx.strokeStyle='rgba(150,130,200,.07)';ctx.lineWidth=1;ctx.stroke();
+    ctx.strokeStyle='rgba(150,130,200,.06)';ctx.lineWidth=1;ctx.stroke();
   });
-  for(let i=1;i<Math.min(hexes.length,7);i++){
-    const j=i%6+1;if(!hexes[j])continue;
-    ctx.beginPath();ctx.moveTo(hexes[i].x,hexes[i].y);ctx.lineTo(hexes[j].x,hexes[j].y);
-    ctx.strokeStyle='rgba(150,130,200,.04)';ctx.lineWidth=.8;ctx.stroke();
-  }
 }
 
 function draw(){
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='#1a1624';ctx.fillRect(0,0,W,H);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#1a1624';
+  ctx.fillRect(0,0,W,H);
   if(!hexes.length){
-    ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='italic 20px Georgia,serif';
+    ctx.fillStyle='rgba(255,255,255,.2)';
+    ctx.font='italic 20px Georgia,serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('Warte auf erste Einträge…',W/2,H/2);fr++;return;
+    ctx.fillText('Warte auf erste Einträge…',W/2,H/2);
+    fr++;return;
   }
-  drawLines();hexes.forEach((h,i)=>drawHex(h,i===hov));fr++;
+  drawLines();
+  hexes.forEach((h,i)=>drawGemHex(h,i===hov));
+  fr++;
 }
 
 function hexAt(mx,my){
   for(let i=hexes.length-1;i>=0;i--){
-    const h=hexes[i];if(Math.hypot(mx-h.x,my-h.y)<h.r*.92)return i;
-  }return -1;
+    const h=hexes[i];
+    if(Math.hypot(mx-h.x,my-h.y)<h.r*0.92)return i;
+  }
+  return -1;
 }
 
-function showTip(i,mx,my){
+function showTip(i,cx,cy){
   const en=hexes[i].e;
   document.getElementById('tip-k').textContent=en.kognition||'—';
   document.getElementById('tip-b').textContent=en.koerper||'—';
   document.getElementById('tip-u').textContent=en.umwelt||'—';
   const o=document.getElementById('tip-o');
-  if(en.moeglichkeitsraum){o.textContent='→ '+en.moeglichkeitsraum;o.style.display='block';}
-  else o.style.display='none';
-  // Position tip — keep inside viewport
-  const tw=250,th=200;
-  let tx=mx+18,ty=my-10;
-  if(tx+tw>W)tx=mx-tw-10;
-  if(ty+th>H)ty=H-th-10;
+  if(en.moeglichkeitsraum){
+    o.textContent='→ '+en.moeglichkeitsraum;
+    o.style.display='block';
+  } else {
+    o.style.display='none';
+  }
+  let tx=cx+18,ty=cy-10;
+  if(tx+250>W)tx=cx-260;
+  if(ty+200>H)ty=H-210;
   if(ty<10)ty=10;
   tip.style.left=tx+'px';tip.style.top=ty+'px';
   tip.classList.add('on');
 }
 
-function hideTip(){tip.classList.remove('on');}
-
-// Use document-level listener to catch all mouse movement over canvas
 document.addEventListener('mousemove',e=>{
   const rect=cv.getBoundingClientRect();
-  const mx=e.clientX-rect.left;
-  const my=e.clientY-rect.top;
+  const mx=(e.clientX-rect.left)*(cv.width/rect.width);
+  const my=(e.clientY-rect.top)*(cv.height/rect.height);
   const i=hexAt(mx,my);
-  if(i>=0&&i!==hov){hov=i;showTip(i,e.clientX,e.clientY);}
-  else if(i<0&&hov>=0){hov=-1;hideTip();}
-  else if(i>=0){
-    // Update position while hovering
-    const tw=250,th=200;
-    let tx=e.clientX+18,ty=e.clientY-10;
-    if(tx+tw>window.innerWidth)tx=e.clientX-tw-10;
-    if(ty+th>window.innerHeight)ty=window.innerHeight-th-10;
-    if(ty<10)ty=10;
-    tip.style.left=tx+'px';tip.style.top=ty+'px';
+  if(i>=0){
+    if(i!==hov){hov=i;}
+    showTip(i,e.clientX,e.clientY);
+  } else {
+    if(hov>=0){hov=-1;tip.classList.remove('on');}
   }
 });
 
-document.addEventListener('mouseleave',()=>{hov=-1;hideTip();});
+document.addEventListener('mouseleave',()=>{
+  hov=-1;tip.classList.remove('on');
+});
 
 async function load(){
   try{
-    const r=await fetch(URL+'?t='+Date.now());
-    const d=await r.json();
+    const res=await fetch(SURL+'?t='+Date.now());
+    const d=await res.json();
     if(Array.isArray(d)&&d.length!==entries.length){
       entries=d;layout();
       const n=entries.length;
@@ -223,233 +268,8 @@ async function load(){
   }catch(e){}
 }
 
-function loop(){requestAnimationFrame(()=>{draw();loop();});}
-window.addEventListener('resize',resize);
-resize();load();setInterval(load,15000);loop();
-</script>
-</body>
-</html><!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zwischenraum · Wabenlandschaft</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;background:#1a1624;overflow:hidden;font-family:-apple-system,sans-serif}
-canvas{display:block;position:fixed;top:0;left:0;width:100%;height:100%}
-#info{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.28);font-size:11px;letter-spacing:.1em;text-transform:uppercase;pointer-events:none;font-style:italic;white-space:nowrap}
-#count{position:fixed;top:20px;right:24px;color:rgba(255,255,255,.35);font-size:13px;font-style:italic;pointer-events:none}
-#tip{
-  position:fixed;
-  background:rgba(18,14,28,.97);
-  border:0.5px solid rgba(255,255,255,.18);
-  border-radius:14px;
-  padding:14px 16px;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity .15s;
-  max-width:240px;
-  z-index:100;
-}
-#tip.on{opacity:1}
-.td{font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;font-weight:600;margin-top:8px}
-.td:first-child{margin-top:0}
-.tv{font-size:13px;font-style:italic;color:rgba(255,255,255,.85);line-height:1.4;font-family:Georgia,serif}
-.to{font-size:13px;font-style:italic;color:rgba(180,155,220,.95);line-height:1.4;font-family:Georgia,serif;border-top:.5px solid rgba(255,255,255,.12);padding-top:8px;margin-top:8px}
-</style>
-</head>
-<body>
-<canvas id="c"></canvas>
-<div id="info">Zwischenraum</div>
-<div id="count"></div>
-<div id="tip">
-  <div class="td" style="color:#e05080">Kognition</div>
-  <div class="tv" id="tip-k"></div>
-  <div class="td" style="color:#22a8a8">Körper</div>
-  <div class="tv" id="tip-b"></div>
-  <div class="td" style="color:#7788ee">Umwelt</div>
-  <div class="tv" id="tip-u"></div>
-  <div class="to" id="tip-o"></div>
-</div>
+function loop(){requestAnimationFrame(()=>{draw();loop();})}
 
-<script>
-const URL='https://script.google.com/macros/s/AKfycbx4SSLB-1n8lrcpd2BxOaIcwN1ytlRbUpjkPyOflwzK4QlrEd0Vf-p_qkvP04z2pHmUSw/exec';
-const CK='rgba(201,75,140,',CB='rgba(46,184,184,',CU='rgba(68,85,204,',CM='rgba(123,111,160,';
-const AXIAL=[[0,0],[1,0],[0,1],[-1,1],[-1,0],[0,-1],[1,-1],[2,0],[1,1],[0,2],[-1,2],[-2,2],[-2,1],[-2,0],[-1,-1],[0,-2],[1,-2],[2,-2],[2,-1],[2,1],[1,2],[-1,3],[-2,3],[3,0],[0,3],[-3,2],[3,-1],[2,-2],[0,-3],[-1,-2]];
-
-const cv=document.getElementById('c');
-const ctx=cv.getContext('2d');
-const tip=document.getElementById('tip');
-let W,H,hexes=[],entries=[],hov=-1,fr=0;
-
-function resize(){
-  W=cv.width=window.innerWidth;
-  H=cv.height=window.innerHeight;
-  layout();
-}
-
-function layout(){
-  const R=Math.min(W,H)*0.09,S=Math.sqrt(3),cx=W/2,cy=H/2;
-  hexes=entries.map((e,i)=>{
-    const[q,r]=AXIAL[i%AXIAL.length];
-    return{x:cx+R*S*(q+r/2),y:cy+R*1.5*r,r:R,e,born:hexes[i]?hexes[i].born:Date.now()-i*150};
-  });
-}
-
-function hp(cx,cy,r){
-  return Array.from({length:6},(_,i)=>{const a=Math.PI/180*(60*i-30);return[cx+r*Math.cos(a),cy+r*Math.sin(a)]});
-}
-
-function drawHex(h,hl){
-  const{x,y,r,e,born}=h;
-  const sc=Math.min(1,(Date.now()-born)/500);
-  if(sc<=0)return;
-  ctx.save();ctx.translate(x,y);ctx.scale(sc,sc);
-  const v=hp(0,0,r),C=[0,0],al=hl?1:0.88;
-
-  function tri(pts,c,a){
-    ctx.beginPath();pts.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-    ctx.closePath();ctx.fillStyle=c+a+')';ctx.fill();
-  }
-
-  tri([C,v[5],v[0],v[1]],CK,al*0.85);
-  tri([C,v[1],v[2],v[3]],CB,al*0.85);
-  tri([C,v[3],v[4],v[5]],CU,al*0.85);
-
-  for(let ring=1;ring<=3;ring++){
-    const rr=r*(ring/4.5),n=ring*6,cols=[CK,CB,CU,CM];
-    for(let i=0;i<n;i++){
-      const a=(Math.PI*2/n)*i+fr*0.002;
-      ctx.beginPath();
-      ctx.moveTo(rr*.28*Math.cos(a-Math.PI*2/n*.5),rr*.28*Math.sin(a-Math.PI*2/n*.5));
-      ctx.lineTo(rr*Math.cos(a),rr*Math.sin(a));
-      ctx.lineTo(rr*.8*Math.cos(a+Math.PI*2/n),rr*.8*Math.sin(a+Math.PI*2/n));
-      ctx.closePath();ctx.fillStyle=cols[(ring+i)%4]+(al*.06)+')';ctx.fill();
-    }
-  }
-
-  ctx.beginPath();v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-  ctx.closePath();ctx.strokeStyle='rgba(255,255,255,'+(al*.2)+')';ctx.lineWidth=1.5;ctx.stroke();
-
-  // Inner violett hex
-  const ir=r*.33,iv=hp(0,0,ir);
-  ctx.beginPath();iv.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-  ctx.closePath();ctx.fillStyle=CM+(al*.92)+')';ctx.fill();
-
-  // Text over full hex, clipped to outer hex boundary
-  if(e.moeglichkeitsraum){
-    const fs=Math.max(8,r*.1);
-    const maxW=r*1.55;
-    const words=e.moeglichkeitsraum.trim().split(/\s+/);
-    ctx.save();
-    // Clip to OUTER hex
-    ctx.beginPath();v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
-    ctx.closePath();ctx.clip();
-    ctx.font=`italic ${fs}px Georgia,serif`;
-    ctx.fillStyle='rgba(255,255,255,'+(al*.92)+')';
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    // Build lines — max 4 lines
-    const lines=[];let line='';
-    words.forEach(w=>{
-      if(lines.length>=4)return;
-      const test=line+(line?' ':'\'\'')+w;
-      if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}
-      else line=test;
-    });
-    if(lines.length<4&&line)lines.push(line);
-    const lh=fs*1.4;
-    const totalH=(lines.length-1)*lh;
-    lines.forEach((l,i)=>ctx.fillText(l,0,-totalH/2+i*lh));
-    ctx.restore();
-  }
-
-  ctx.restore();
-}
-
-function drawLines(){
-  if(hexes.length<2)return;
-  hexes.slice(1,Math.min(7,hexes.length)).forEach(h=>{
-    ctx.beginPath();ctx.moveTo(hexes[0].x,hexes[0].y);ctx.lineTo(h.x,h.y);
-    ctx.strokeStyle='rgba(150,130,200,.07)';ctx.lineWidth=1;ctx.stroke();
-  });
-  for(let i=1;i<Math.min(hexes.length,7);i++){
-    const j=i%6+1;if(!hexes[j])continue;
-    ctx.beginPath();ctx.moveTo(hexes[i].x,hexes[i].y);ctx.lineTo(hexes[j].x,hexes[j].y);
-    ctx.strokeStyle='rgba(150,130,200,.04)';ctx.lineWidth=.8;ctx.stroke();
-  }
-}
-
-function draw(){
-  ctx.clearRect(0,0,W,H);ctx.fillStyle='#1a1624';ctx.fillRect(0,0,W,H);
-  if(!hexes.length){
-    ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='italic 20px Georgia,serif';
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText('Warte auf erste Einträge…',W/2,H/2);fr++;return;
-  }
-  drawLines();hexes.forEach((h,i)=>drawHex(h,i===hov));fr++;
-}
-
-function hexAt(mx,my){
-  for(let i=hexes.length-1;i>=0;i--){
-    const h=hexes[i];if(Math.hypot(mx-h.x,my-h.y)<h.r*.92)return i;
-  }return -1;
-}
-
-function showTip(i,mx,my){
-  const en=hexes[i].e;
-  document.getElementById('tip-k').textContent=en.kognition||'—';
-  document.getElementById('tip-b').textContent=en.koerper||'—';
-  document.getElementById('tip-u').textContent=en.umwelt||'—';
-  const o=document.getElementById('tip-o');
-  if(en.moeglichkeitsraum){o.textContent='→ '+en.moeglichkeitsraum;o.style.display='block';}
-  else o.style.display='none';
-  // Position tip — keep inside viewport
-  const tw=250,th=200;
-  let tx=mx+18,ty=my-10;
-  if(tx+tw>W)tx=mx-tw-10;
-  if(ty+th>H)ty=H-th-10;
-  if(ty<10)ty=10;
-  tip.style.left=tx+'px';tip.style.top=ty+'px';
-  tip.classList.add('on');
-}
-
-function hideTip(){tip.classList.remove('on');}
-
-// Use document-level listener to catch all mouse movement over canvas
-document.addEventListener('mousemove',e=>{
-  const rect=cv.getBoundingClientRect();
-  const mx=e.clientX-rect.left;
-  const my=e.clientY-rect.top;
-  const i=hexAt(mx,my);
-  if(i>=0&&i!==hov){hov=i;showTip(i,e.clientX,e.clientY);}
-  else if(i<0&&hov>=0){hov=-1;hideTip();}
-  else if(i>=0){
-    // Update position while hovering
-    const tw=250,th=200;
-    let tx=e.clientX+18,ty=e.clientY-10;
-    if(tx+tw>window.innerWidth)tx=e.clientX-tw-10;
-    if(ty+th>window.innerHeight)ty=window.innerHeight-th-10;
-    if(ty<10)ty=10;
-    tip.style.left=tx+'px';tip.style.top=ty+'px';
-  }
-});
-
-document.addEventListener('mouseleave',()=>{hov=-1;hideTip();});
-
-async function load(){
-  try{
-    const r=await fetch(URL+'?t='+Date.now());
-    const d=await r.json();
-    if(Array.isArray(d)&&d.length!==entries.length){
-      entries=d;layout();
-      const n=entries.length;
-      document.getElementById('count').textContent=n+' '+(n===1?'Eintrag':'Einträge');
-    }
-  }catch(e){}
-}
-
-function loop(){requestAnimationFrame(()=>{draw();loop();});}
 window.addEventListener('resize',resize);
 resize();load();setInterval(load,15000);loop();
 </script>
