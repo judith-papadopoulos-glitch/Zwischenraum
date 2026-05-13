@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Zwischenraum</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--serif:'Georgia','Times New Roman',serif;--sans:-apple-system,'Helvetica Neue',Arial,sans-serif}
+html,body{height:100%;font-family:var(--sans)}
+body{display:flex;justify-content:center;background:#111;min-height:100vh}
+.app{width:100%;max-width:390px;min-height:100vh;display:flex;flex-direction:column}
+.ph{display:none;flex-direction:column;min-height:100vh}
+.ph.on{display:flex}
+.bg-start{background:linear-gradient(160deg,#4ecdc4 0%,#556cff 35%,#c94b8c 65%,#ff6b35 100%)}
+.bg-k{background:linear-gradient(160deg,#c94b8c 0%,#e8638a 40%,#f08080 100%)}
+.bg-b{background:linear-gradient(160deg,#2eb8b8 0%,#38c6c6 40%,#5bc8c8 100%)}
+.bg-u{background:linear-gradient(160deg,#4455cc 0%,#5566dd 40%,#7788ee 100%)}
+.bg-moeg{background:linear-gradient(160deg,#c08060 0%,#d4956a 35%,#d4a88a 65%,#e0c0a0 100%)}
+.bg-done{background:linear-gradient(160deg,#2eb8b8 0%,#556cff 50%,#c94b8c 100%)}
+.content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem}
+.gem-wrap{text-align:center;padding:3rem 1.5rem .5rem}
+.fill-content{flex:1;display:flex;flex-direction:column;padding:1.5rem 1.5rem 0;justify-content:center}
+.fill-bottom{padding:0 1.5rem 2rem;display:flex;flex-direction:column;align-items:center}
+.moeg-content{flex:1;display:flex;flex-direction:column;padding:1.25rem 1.5rem 0}
+.moeg-bottom{padding:0 1.5rem 2rem;display:flex;flex-direction:column;align-items:center}
+.done-content{flex:1;display:flex;flex-direction:column;padding:1.5rem 1.5rem 0;justify-content:center}
+.done-bottom{padding:0 1.5rem 2rem;display:flex;flex-direction:column;align-items:center}
+.welcome-title{font-family:var(--serif);font-style:italic;font-size:38px;font-weight:400;color:white;text-align:center;line-height:1.1;margin-bottom:.6rem}
+.welcome-sub{font-size:15px;color:rgba(255,255,255,.82);text-align:center;font-family:var(--serif);font-style:italic;line-height:1.55;margin-bottom:2rem}
+.where{color:rgba(255,255,255,.85);font-size:17px;margin-bottom:1rem;text-align:center}
+.where em{font-style:italic}
+.dc-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;width:100%}
+.dc{border-radius:16px;padding:1rem .5rem;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:opacity .15s}
+.dc:active{opacity:.8}
+.dc-k{background:#e05080}.dc-b{background:#22a8a8}.dc-u{background:#6677bb}
+.dc-icon{font-size:24px;color:white}
+.dc-lbl{font-size:13px;font-weight:600;color:white;letter-spacing:.02em}
+.dim-title{font-family:var(--serif);font-style:italic;font-size:32px;color:white;text-align:center;margin-bottom:.75rem;font-weight:400}
+.dim-q{font-size:18px;color:white;text-align:center;margin-bottom:1.25rem;line-height:1.45;opacity:.95}
+.dim-q em{font-style:italic}
+.sec-title{font-size:20px;color:white;text-align:center;margin-bottom:1.25rem;line-height:1.4}
+.sec-title em{font-style:italic}
+textarea{width:100%;min-height:120px;background:rgba(255,255,255,.25);border:none;border-radius:14px;padding:14px;font-family:var(--serif);font-size:16px;color:white;outline:none;resize:none}
+textarea::placeholder{color:rgba(255,255,255,.55)}
+textarea:focus{background:rgba(255,255,255,.32)}
+.btn-main{width:100%;background:#00c8d4;color:white;border:none;border-radius:14px;padding:16px;font-size:17px;font-weight:600;cursor:pointer;margin-top:1rem;font-family:var(--sans);transition:opacity .15s}
+.btn-main:active{opacity:.8}
+.btn-ghost{background:none;border:none;color:rgba(255,255,255,.7);font-size:14px;cursor:pointer;margin-top:.75rem;padding:.5rem;font-family:var(--sans)}
+.next-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.nc{border-radius:16px;padding:1rem .5rem;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:opacity .15s}
+.nc:active{opacity:.8}
+.moeg-hex{width:100%;position:relative;margin-bottom:.75rem}
+.pills-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:.75rem}
+.pill{border-radius:20px;padding:8px 16px;font-size:14px;font-family:var(--serif);font-style:italic;color:white;line-height:1.4;word-break:break-word}
+.pill-k{background:rgba(200,70,120,.5);border:1px solid rgba(220,100,140,.4)}
+.pill-b{background:rgba(30,160,160,.5);border:1px solid rgba(60,180,180,.4)}
+.pill-u{background:rgba(60,80,180,.5);border:1px solid rgba(80,110,200,.4)}
+.pill-f{opacity:.6;font-style:normal;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2)}
+.pill-left{align-self:flex-start;max-width:85%}
+.pill-right{align-self:flex-end;max-width:85%}
+.pill-center{align-self:center;max-width:90%}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.toggle-lbl{font-size:14px;color:rgba(255,255,255,.8)}
+.toggle{position:relative;width:44px;height:26px;background:rgba(255,255,255,.3);border-radius:13px;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:rgba(0,200,212,.8)}
+.toggle-knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .toggle-knob{transform:translateX(18px)}
+.imp-list{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:1rem}
+.imp-item{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;backdrop-filter:blur(4px)}
+.imp-item:active{background:rgba(255,255,255,.28)}
+.imp-text{flex:1}
+.imp-lbl{font-size:13px;font-weight:600;color:white;margin-bottom:2px}
+.imp-val{font-size:14px;font-style:italic;color:rgba(255,255,255,.85);font-family:var(--serif);line-height:1.4}
+.imp-arrow{color:rgba(255,255,255,.6);font-size:18px;flex-shrink:0}
+.sending{text-align:center;color:rgba(255,255,255,.7);font-size:14px;padding:1rem;font-style:italic}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div id="ph-start" class="ph on bg-start">
+  <div class="content">
+    <svg width="72" height="82" viewBox="0 0 100 110" fill="none" style="margin:0 auto 1.25rem;opacity:.4" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+    <div class="welcome-title">Zwischenraum</div>
+    <div class="welcome-sub">Zwischen Impuls und Reaktion<br>liegt ein Raum – erlebe ihn.</div>
+    <div class="where">Wo <em>beginnst</em> du?</div>
+    <div class="dc-grid">
+      <div class="dc dc-k" onclick="startWith('k')">
+        <div class="dc-icon">⚙</div>
+        <div class="dc-lbl">Kognition</div>
+      </div>
+      <div class="dc dc-b" onclick="startWith('b')">
+        <div class="dc-icon">🧍</div>
+        <div class="dc-lbl">Körper</div>
+      </div>
+      <div class="dc dc-u" onclick="startWith('u')">
+        <div class="dc-icon">👁</div>
+        <div class="dc-lbl">Umwelt</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="ph-k" class="ph bg-k">
+  <div class="gem-wrap">
+    <svg width="56" height="64" viewBox="0 0 100 110" fill="none" style="opacity:.4;margin:0 auto" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+  </div>
+  <div class="fill-content">
+    <div class="dim-title">Kognition</div>
+    <div class="dim-q">Was hat dich gerade <em>bewegt</em>?</div>
+    <textarea id="ta-k" placeholder="Schreib, was kommt …"></textarea>
+  </div>
+  <div class="fill-bottom">
+    <button class="btn-main" onclick="save('k')">Weiter</button>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+<div id="ph-b" class="ph bg-b">
+  <div class="gem-wrap">
+    <svg width="56" height="64" viewBox="0 0 100 110" fill="none" style="opacity:.4;margin:0 auto" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+  </div>
+  <div class="fill-content">
+    <div class="dim-title">Körper</div>
+    <div class="dim-q">Was <em>spürst</em> du gerade im Körper?</div>
+    <textarea id="ta-b" placeholder="Schreib, was kommt …"></textarea>
+  </div>
+  <div class="fill-bottom">
+    <button class="btn-main" onclick="save('b')">Weiter</button>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+<div id="ph-u" class="ph bg-u">
+  <div class="gem-wrap">
+    <svg width="56" height="64" viewBox="0 0 100 110" fill="none" style="opacity:.4;margin:0 auto" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+  </div>
+  <div class="fill-content">
+    <div class="dim-title">Umwelt</div>
+    <div class="dim-q">Was fällt dir <em>hier</em> gerade auf?</div>
+    <textarea id="ta-u" placeholder="Schreib, was kommt …"></textarea>
+  </div>
+  <div class="fill-bottom">
+    <button class="btn-main" onclick="save('u')">Weiter</button>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+<div id="ph-next" class="ph bg-start">
+  <div class="content">
+    <svg width="56" height="64" viewBox="0 0 100 110" fill="none" style="opacity:.4;margin:0 auto 1.5rem" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+    <div class="sec-title">Wo geht es <em>weiter</em>?</div>
+    <div class="next-cards" id="next-cards"></div>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+<div id="ph-moeg" class="ph bg-moeg">
+  <div class="moeg-content">
+    <div class="sec-title" style="padding-top:1.5rem;font-size:22px">Was <em>zeigt sich</em>,<br>wenn du <em>inne hältst</em>?</div>
+    <div class="pills-wrap" id="pills-wrap"></div>
+    <div class="toggle-row">
+      <div class="toggle" id="ftoggle" onclick="toggleForeign()" role="switch" aria-checked="false">
+        <div class="toggle-knob"></div>
+      </div>
+      <span class="toggle-lbl">fremde Impulse reinholen</span>
+    </div>
+    <textarea id="moeg-ta" placeholder="Ein Satz, ein Bild, ein Wort, …" style="min-height:80px"></textarea>
+  </div>
+  <div class="moeg-bottom">
+    <button class="btn-main" onclick="finish()">Absenden</button>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+<div id="ph-sending" class="ph bg-moeg">
+  <div class="content">
+    <div class="sending">Dein Sechseck wird übertragen…</div>
+  </div>
+</div>
+
+<div id="ph-done" class="ph bg-done">
+  <div class="done-content">
+    <svg width="56" height="64" viewBox="0 0 100 110" fill="none" style="opacity:.4;margin:0 auto 1.5rem" aria-hidden="true">
+      <polygon points="50,5 90,35 90,75 50,105 10,75 10,35" fill="white" opacity=".2" stroke="white" stroke-width="1.5"/>
+      <polygon points="50,5 90,35 50,50 10,35" fill="white" opacity=".35"/>
+      <polygon points="10,35 50,50 10,75" fill="white" opacity=".15"/>
+      <polygon points="90,35 50,50 90,75" fill="white" opacity=".15"/>
+      <polygon points="10,75 50,50 50,105" fill="white" opacity=".22"/>
+      <polygon points="90,75 50,50 50,105" fill="white" opacity=".22"/>
+    </svg>
+    <div class="sec-title">Wo möchtest du <em>weiter</em> machen?</div>
+    <div class="imp-list" id="imp-list"></div>
+  </div>
+  <div class="done-bottom">
+    <button class="btn-main" onclick="restart()">Ohne Impuls neu beginnen</button>
+    <button class="btn-ghost" onclick="goBack()">zurück</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx4SSLB-1n8lrcpd2BxOaIcwN1ytlRbUpjkPyOflwzK4QlrEd0Vf-p_qkvP04z2pHmUSw/exec';
+
+const DIMS={
+  k:{l:'Kognition',bg:'bg-k',cc:'dc-k',nc:'nc-k',pillCls:'pill-k',icon:'⚙'},
+  b:{l:'Körper',bg:'bg-b',cc:'dc-b',nc:'nc-b',pillCls:'pill-b',icon:'🧍'},
+  u:{l:'Umwelt',bg:'bg-u',cc:'dc-u',nc:'nc-u',pillCls:'pill-u',icon:'👁'},
+};
+
+let cur={k:'',b:'',u:'',o:''},order=[],stepIdx=0,navHistory=[],foreignOn=false,poolData=[];
+
+function show(id){
+  document.querySelectorAll('.ph').forEach(p=>p.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+function nav(id){navHistory.push(id);show(id)}
+function goBack(){
+  if(navHistory.length>1){navHistory.pop();show(navHistory[navHistory.length-1]);}
+  else{navHistory=[];show('ph-start');}
+}
+
+function startWith(d){
+  cur={k:'',b:'',u:'',o:''};order=[d];stepIdx=0;
+  navHistory=['ph-start'];
+  showFill(d);
+  loadPool();
+}
+
+function showFill(dim){
+  document.getElementById('ta-'+dim).value=cur[dim]||'';
+  nav('ph-'+dim);
+}
+
+function save(dim){
+  const v=document.getElementById('ta-'+dim).value.trim();
+  if(!v)return;
+  cur[dim]=v;
+  stepIdx++;
+  const rem=['k','b','u'].filter(d=>!order.includes(d));
+  if(!rem.length){showMoeg();return;}
+  if(rem.length===1){order.push(rem[0]);showFill(rem[0]);return;}
+  showNextChoice(rem);
+}
+
+function showNextChoice(rem){
+  const nc=document.getElementById('next-cards');
+  nc.innerHTML=rem.map(d=>`
+    <div class="nc ${DIMS[d].nc||''}" onclick="pickNext('${d}')"
+      style="background:${d==='k'?'#e05080':d==='b'?'#22a8a8':'#6677bb'}">
+      <div style="font-size:22px;color:white">${DIMS[d].icon}</div>
+      <div style="font-size:13px;font-weight:600;color:white">${DIMS[d].l}</div>
+    </div>`).join('');
+  nav('ph-next');
+}
+
+function pickNext(d){order.push(d);showFill(d);}
+
+function showMoeg(){
+  buildPills(false);
+  nav('ph-moeg');
+}
+
+function buildPills(foreign){
+  const pw=document.getElementById('pills-wrap');
+  pw.innerHTML='';
+  const positions=['pill-left','pill-right','pill-center'];
+  const dims=['k','b','u'];
+  dims.forEach((d,i)=>{
+    if(!cur[d])return;
+    const pill=document.createElement('div');
+    pill.className=`pill ${DIMS[d].pillCls} ${positions[i%3]}`;
+    pill.textContent=cur[d];
+    pw.appendChild(pill);
+  });
+  if(foreign&&poolData.length){
+    const others=poolData.filter(e=>e.kognition!==cur.k);
+    ['kognition','umwelt'].forEach((f,i)=>{
+      if(!others.length)return;
+      const src=others.map(e=>e[f]).filter(Boolean);
+      if(!src.length)return;
+      const txt=src[Math.floor(Math.random()*src.length)];
+      const pill=document.createElement('div');
+      pill.className='pill pill-f pill-center';
+      pill.textContent=txt;
+      pw.appendChild(pill);
+    });
+  }
+}
+
+function toggleForeign(){
+  foreignOn=!foreignOn;
+  const t=document.getElementById('ftoggle');
+  t.classList.toggle('on',foreignOn);
+  t.setAttribute('aria-checked',foreignOn);
+  buildPills(foreignOn);
+}
+
+async function loadPool(){
+  try{
+    const res=await fetch(SCRIPT_URL+'?t='+Date.now());
+    const data=await res.json();
+    if(Array.isArray(data))poolData=data;
+  }catch(e){poolData=[];}
+}
+
+async function finish(){
+  cur.o=document.getElementById('moeg-ta').value.trim();
+  nav('ph-sending');
+  try{
+    await fetch(SCRIPT_URL,{
+      method:'POST',
+      body:JSON.stringify({
+        kognition:cur.k,
+        koerper:cur.b,
+        umwelt:cur.u,
+        moeglichkeitsraum:cur.o,
+        session:'wien2026'
+      })
+    });
+  }catch(e){}
+  await loadPool();
+  showImpulses();
+}
+
+function showImpulses(){
+  const others=poolData.filter(e=>e.kognition!==cur.k);
+  function rnd(arr){return arr.length?arr[Math.floor(Math.random()*arr.length)]:null}
+  const e1=rnd(others),e2=rnd(others),e3=rnd(others.filter(e=>e.moeglichkeitsraum));
+  const impulses=[
+    {lbl:'Gedanke anderer',text:e1?e1.kognition:'Was trägt mich ohne Merkens?',dim:'k',prefill:e1?e1.kognition:'Was trägt mich ohne Merkens?'},
+    {lbl:'Raumimpuls',text:e2?e2.umwelt:'Licht durch hohe Fenster',dim:'u',prefill:e2?e2.umwelt:'Licht durch hohe Fenster'},
+    {lbl:'Gedanke aus dem Zwischenraum',text:e3?e3.moeglichkeitsraum:'Etwas zeigt sich — noch ohne Namen.',dim:'k',prefill:e3?e3.moeglichkeitsraum:'Etwas zeigt sich — noch ohne Namen.'},
+  ];
+  document.getElementById('imp-list').innerHTML=impulses.map(imp=>`
+    <div class="imp-item" onclick="startFromImpulse('${imp.dim}','${imp.prefill.replace(/'/g,"\\'")}')">
+      <div class="imp-text">
+        <div class="imp-lbl">${imp.lbl}</div>
+        <div class="imp-val">${imp.text}</div>
+      </div>
+      <div class="imp-arrow">›</div>
+    </div>`).join('');
+  nav('ph-done');
+}
+
+function startFromImpulse(dim,prefill){
+  cur={k:'',b:'',u:'',o:''};cur[dim]=prefill;
+  order=[dim];stepIdx=1;navHistory=['ph-start'];
+  const rem=['k','b','u'].filter(d=>d!==dim);
+  if(rem.length===1){order.push(rem[0]);showFill(rem[0]);}
+  else showNextChoice(rem);
+}
+
+function restart(){
+  cur={k:'',b:'',u:'',o:''};order=[];stepIdx=0;navHistory=[];
+  show('ph-start');
+}
+</script>
+</body>
+</html>
