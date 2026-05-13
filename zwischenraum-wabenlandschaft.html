@@ -107,27 +107,28 @@ function drawHex(h,hl){
   ctx.beginPath();iv.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
   ctx.closePath();ctx.fillStyle=CM+(al*.92)+')';ctx.fill();
 
-  // Text with line wrapping, clipped to inner hex
+  // Text over full hex, clipped to outer hex boundary
   if(e.moeglichkeitsraum){
-    const fs=Math.max(7,ir*.3);
-    const maxW=ir*1.6;
+    const fs=Math.max(8,r*.1);
+    const maxW=r*1.55;
     const words=e.moeglichkeitsraum.trim().split(/\s+/);
     ctx.save();
-    ctx.beginPath();iv.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+    // Clip to OUTER hex
+    ctx.beginPath();v.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
     ctx.closePath();ctx.clip();
     ctx.font=`italic ${fs}px Georgia,serif`;
-    ctx.fillStyle='rgba(255,255,255,'+(al*.88)+')';
+    ctx.fillStyle='rgba(255,255,255,'+(al*.92)+')';
     ctx.textAlign='center';ctx.textBaseline='middle';
-    // Build lines
+    // Build lines — max 4 lines
     const lines=[];let line='';
     words.forEach(w=>{
+      if(lines.length>=4)return;
       const test=line+(line?' ':'\'\'')+w;
       if(ctx.measureText(test).width>maxW&&line){lines.push(line);line=w;}
       else line=test;
-      if(lines.length>=3){return;}
     });
-    if(lines.length<3&&line)lines.push(line);
-    const lh=fs*1.35;
+    if(lines.length<4&&line)lines.push(line);
+    const lh=fs*1.4;
     const totalH=(lines.length-1)*lh;
     lines.forEach((l,i)=>ctx.fillText(l,0,-totalH/2+i*lh));
     ctx.restore();
