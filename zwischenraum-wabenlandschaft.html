@@ -107,15 +107,19 @@ function drawHex(h,hl){
   ctx.beginPath();iv.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
   ctx.closePath();ctx.fillStyle=CM+(al*.92)+')';ctx.fill();
 
-  // Short text — max 3 words
+  // Short text — max 2 words, clipped to inner hex
   if(e.moeglichkeitsraum){
     const words=e.moeglichkeitsraum.trim().split(/\s+/);
-    const short=words.slice(0,3).join(' ')+(words.length>3?'…':'');
-    const fs=Math.max(6,ir*.32);
+    const short=words.slice(0,7).join(' ')+(words.length>7?'…':'');
+    const fs=Math.max(6,ir*.26);
+    ctx.save();
+    ctx.beginPath();iv.forEach(([px,py],i)=>i===0?ctx.moveTo(px,py):ctx.lineTo(px,py));
+    ctx.closePath();ctx.clip();
     ctx.font=`italic ${fs}px Georgia,serif`;
     ctx.fillStyle='rgba(255,255,255,'+(al*.88)+')';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(short,0,0);
+    ctx.restore();
   }
 
   ctx.restore();
